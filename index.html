@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mass Servers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F6F1E6;
+    --card:#FFFFFF;
+    --maroon:#7A1E2B;
+    --maroon-deep:#5C1620;
+    --gold:#A9802C;
+    --ink:#2B2320;
+    --muted:#8B7C6C;
+    --line:#E4D9C5;
+    box-sizing:border-box;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    background:var(--cream);
+    font-family:'Lora',serif;
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+
+  /* ---- app shell ---- */
+  .app{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+    max-width:480px;
+    width:100%;
+    margin:0 auto;
+  }
+  .screen{
+    flex:1;
+    display:none;
+    flex-direction:column;
+    min-height:0;
+  }
+  .screen.active{display:flex;}
+  .content{
+    flex:1;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:0 20px 24px;
+  }
+
+  /* ---- shared header ---- */
+  .cross{
+    text-align:center;
+    font-size:28px;
+    color:var(--gold);
+    margin:16px 0 2px;
+  }
+  .brand{
+    text-align:center;
+    font-family:'Playfair Display',serif;
+    font-weight:700;
+    color:var(--maroon);
+    font-size:21px;
+    line-height:1.25;
+    margin:0 0 4px;
+  }
+  .subbrand{
+    text-align:center;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.5;
+    margin:0 0 16px;
+  }
+
+  /* ---- register screen ---- */
+  .section-label{
+    font-family:'Playfair Display',serif;
+    font-weight:600;
+    color:var(--maroon);
+    font-size:15px;
+    border-bottom:2px solid var(--gold);
+    padding-bottom:7px;
+    margin:18px 0 14px;
+  }
+  .field{margin-bottom:13px;}
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:5px;
+  }
+  .field label .req{color:var(--maroon);}
+  .field input, .field select, .field textarea{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:8px;
+    padding:11px 12px;
+    font-family:-apple-system,Roboto,'Segoe UI',Arial,sans-serif;
+    font-size:16px;
+    color:var(--ink) !important;
+    -webkit-text-fill-color:var(--ink);
+    caret-color:var(--maroon);
+  }
+  .field input::placeholder{color:#b7ab97;}
+  .row2{display:flex; gap:10px;}
+  .row2 .field{flex:1;}
+  .submit-btn{
+    width:100%;
+    background:var(--maroon);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    padding:14px;
+    font-family:'Lora',serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:.01em;
+    margin-top:6px;
+  }
+  .hint{
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+    margin-top:10px;
+    line-height:1.6;
+  }
+
+  /* ---- AI screen ---- */
+  .chat-wrap{flex:1; display:flex; flex-direction:column; min-height:0;}
+  .chat-log{flex:1; display:flex; flex-direction:column; gap:11px; padding-top:4px; overflow-y:auto;}
+  .bubble{
+    max-width:82%;
+    padding:11px 14px;
+    border-radius:14px;
+    font-size:13.5px;
+    line-height:1.55;
+  }
+  .bubble.bot{
+    background:#fff;
+    border:1px solid var(--line);
+    align-self:flex-start;
+    border-bottom-left-radius:4px;
+    color:var(--ink);
+  }
+  .bubble.bot .who{
+    display:block;
+    font-family:'Playfair Display',serif;
+    font-weight:600;
+    color:var(--maroon);
+    font-size:11.5px;
+    margin-bottom:3px;
+  }
+  .bubble.user{
+    background:var(--maroon);
+    color:#fff;
+    align-self:flex-end;
+    border-bottom-right-radius:4px;
+  }
+  .suggest-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:10px 0 2px;
+  }
+  .suggest-chip{
+    border:1px solid var(--gold);
+    color:var(--maroon-deep);
+    background:#fff;
+    border-radius:20px;
+    padding:7px 12px;
+    font-size:12px;
+    font-family:'Lora',serif;
+  }
+  .chat-input-bar{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:24px;
+    padding:9px 9px 9px 16px;
+    margin:12px 0 4px;
+    flex:none;
+  }
+  .chat-input-bar input{
+    flex:1; border:none; outline:none;
+    font-family:-apple-system,Roboto,'Segoe UI',Arial,sans-serif;
+    font-size:16px;
+    background:transparent;
+    color:var(--ink) !important;
+    -webkit-text-fill-color:var(--ink);
+    caret-color:var(--maroon);
+  }
+  .chat-input-bar input:disabled{color:var(--muted) !important; -webkit-text-fill-color:var(--muted);}
+  .send-btn:disabled{opacity:.45;}
+  .send-btn{
+    width:34px;height:34px;border-radius:50%;
+    background:var(--maroon);color:#fff;border:none;
+    display:flex;align-items:center;justify-content:center;font-size:15px;
+    flex:none;
+  }
+
+  /* ---- profile screen ---- */
+  .profile-head{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:14px 0 18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:16px;
+  }
+  .avatar{
+    width:84px;height:84px;border-radius:50%;
+    background:linear-gradient(160deg,var(--maroon),var(--maroon-deep));
+    display:flex;align-items:center;justify-content:center;
+    color:#f1e6d8;
+    font-family:'Playfair Display',serif;
+    font-size:28px;
+    font-weight:700;
+    border:3px solid var(--gold);
+    margin-bottom:12px;
+  }
+  .p-name{font-family:'Playfair Display',serif; font-weight:700; color:var(--ink); font-size:17px;}
+  .p-role{color:var(--maroon); font-size:12.5px; font-style:italic; margin-top:3px;}
+  .p-parish{color:var(--muted); font-size:11.5px; margin-top:5px; text-align:center;}
+  .stat-row{
+    display:flex;
+    justify-content:space-around;
+    margin:16px 0 4px;
+    width:100%;
+  }
+  .stat{text-align:center;}
+  .stat b{display:block; font-family:'Playfair Display',serif; color:var(--maroon); font-size:17px;}
+  .stat span{font-size:10.5px; color:var(--muted);}
+  .plist{list-style:none; margin:10px 0 0; padding:0;}
+  .plist li{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 4px;
+    border-bottom:1px solid var(--line);
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .plist li .arrow{color:var(--muted); font-size:13px;}
+
+  /* ---- register: radio + textarea + progress ---- */
+  .radio-row{display:flex; gap:22px; margin-top:6px;}
+  .radio-opt{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink);}
+  .radio-opt input[type="radio"]{
+    width:17px; height:17px; accent-color:var(--maroon); margin:0;
+  }
+  .field textarea{resize:vertical; min-height:64px; font-family:'Lora',serif;}
+  .decl-text{
+    font-size:11.5px;
+    color:var(--muted);
+    line-height:1.7;
+    background:#FBF7EE;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 13px;
+    margin:14px 0 16px;
+  }
+  .progress-track{
+    height:4px;
+    background:var(--line);
+    border-radius:2px;
+    margin:14px 0 4px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    width:33%;
+    background:var(--gold);
+    border-radius:2px;
+  }
+  .progress-label{
+    font-size:10.5px;
+    color:var(--muted);
+    text-align:right;
+    margin-bottom:6px;
+  }
+
+  /* ---- register/login switcher ---- */
+  .mode-switch{
+    display:flex;
+    background:#EFE7D5;
+    border-radius:10px;
+    padding:3px;
+    margin:4px 0 6px;
+  }
+  .mode-btn{
+    flex:1;
+    border:none;
+    background:none;
+    padding:9px 0;
+    font-family:'Lora',serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--muted);
+    border-radius:8px;
+  }
+  .mode-btn.active{background:#fff; color:var(--maroon); box-shadow:0 1px 3px rgba(0,0,0,.08);}
+
+  /* ---- photo upload ---- */
+  .photo-upload{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin:14px 0 18px;
+  }
+  .photo-circle{
+    width:92px;height:92px;
+    border-radius:50%;
+    background:#EFE7D5;
+    border:2px dashed var(--gold);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--muted);
+    font-size:26px;
+    overflow:hidden;
+    margin-bottom:9px;
+  }
+  .photo-circle img{width:100%; height:100%; object-fit:cover;}
+  .photo-upload label.pick{
+    font-size:12px;
+    color:var(--maroon);
+    font-weight:600;
+    border:1px solid var(--gold);
+    border-radius:20px;
+    padding:6px 14px;
+    cursor:pointer;
+  }
+  .photo-upload input[type="file"]{display:none;}
+
+  .subhint{font-size:10.5px; color:var(--muted); margin:-6px 0 12px; line-height:1.5;}
+
+  /* ---- login screen ---- */
+  .login-box{padding-top:8px;}
+  .form-error{
+    background:#5C1620;
+    color:#F6E6E6;
+    border-radius:8px;
+    padding:9px 12px;
+    font-size:12px;
+    margin:4px 0 12px;
+    line-height:1.5;
+  }
+  .submit-btn:disabled{opacity:.6;}
+
+  /* ---- dev preview toggle ---- */
+  .dev-toggle{
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    background:#2B2320;
+    padding:8px 10px;
+    font-size:10.5px;
+    color:#D8CBB4;
+    font-family:'Lora',serif;
+  }
+  .dev-toggle span{opacity:.65;}
+  .dev-switch{
+    display:flex;
+    background:#453a30;
+    border-radius:14px;
+    padding:2px;
+  }
+  .dev-switch button{
+    border:none;
+    background:none;
+    color:#D8CBB4;
+    font-family:'Lora',serif;
+    font-size:10.5px;
+    padding:5px 10px;
+    border-radius:12px;
+  }
+  .dev-switch button.active{background:var(--gold); color:#2B2320; font-weight:600;}
+
+  /* ---- home feed ---- */
+  .home-hero{padding:16px 0 4px;}
+  .home-section-title{
+    font-family:'Playfair Display',serif;
+    font-weight:600;
+    color:var(--maroon);
+    font-size:15px;
+    margin:20px 0 10px;
+  }
+  .schedule-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:9px;
+  }
+  .schedule-day{font-size:12.5px; font-weight:600; color:var(--ink);}
+  .schedule-sub{font-size:10.5px; color:var(--muted); margin-top:2px;}
+  .schedule-time{
+    font-family:'Playfair Display',serif;
+    color:var(--maroon);
+    font-size:14px;
+    font-weight:600;
+  }
+  .announce-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:3px solid var(--gold);
+    border-radius:10px;
+    padding:13px 15px;
+    margin-bottom:10px;
+  }
+  .announce-title{
+    font-family:'Playfair Display',serif;
+    font-weight:600;
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:3px;
+  }
+  .announce-date{font-size:10px; color:var(--muted); margin-bottom:6px;}
+  .announce-body{font-size:12px; color:#4a3f36; line-height:1.55;}
+
+  /* ---- serving roster ---- */
+  .roster-group{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:13px 15px;
+    margin-bottom:12px;
+  }
+  .roster-group-title{
+    font-family:'Playfair Display',serif;
+    font-weight:600;
+    color:var(--maroon);
+    font-size:12.5px;
+    margin-bottom:8px;
+    padding-bottom:7px;
+    border-bottom:1px solid var(--line);
+  }
+  .roster-role{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    padding:6px 0;
+    font-size:12.5px;
+  }
+  .roster-role span:first-child{color:var(--muted);}
+  .roster-name{color:var(--ink); font-weight:600; text-align:right;}
+  .roster-field{margin-bottom:9px;}
+  .roster-field label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+  .roster-field input{
+    width:100%;
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:7px;
+    padding:9px 10px;
+    font-family:'Lora',serif;
+    font-size:16px;
+    color:var(--ink);
+  }
+
+  /* ---- notification toggles ---- */
+  .notif-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 4px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+    color:var(--ink);
+  }
+  .switch{
+    position:relative;
+    width:40px; height:23px;
+    flex:none;
+  }
+  .switch input{opacity:0; width:0; height:0;}
+  .slider{
+    position:absolute; inset:0;
+    background:#DCD1BB;
+    border-radius:20px;
+    transition:.15s;
+    cursor:pointer;
+  }
+  .slider::before{
+    content:"";
+    position:absolute;
+    width:17px; height:17px;
+    left:3px; top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:.15s;
+    box-shadow:0 1px 2px rgba(0,0,0,.2);
+  }
+  .switch input:checked + .slider{background:var(--maroon);}
+  .switch input:checked + .slider::before{transform:translateX(17px);}
+
+  /* ---- footer credit ---- */
+  .app-credit{
+    text-align:center;
+    font-family:'Playfair Display',serif;
+    font-style:italic;
+    font-weight:500;
+    color:var(--gold);
+    font-size:12px;
+    letter-spacing:.01em;
+    padding:26px 0 10px;
+  }
+  .admin-post-btn{
+    border:1px solid var(--maroon);
+    background:none;
+    color:var(--maroon);
+    font-family:'Lora',serif;
+    font-size:11.5px;
+    font-weight:600;
+    border-radius:16px;
+    padding:6px 12px;
+  }
+  #composerBox{
+    background:#FBF7EE;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px;
+    margin-top:4px;
+  }
+
+  /* ---- bottom nav ---- */
+  .navbar{
+    flex:none;
+    display:flex;
+    border-top:1px solid var(--line);
+    background:#fffdf9;
+    padding:10px 4px calc(10px + env(safe-area-inset-bottom,0px));
+    max-width:480px;
+    width:100%;
+    margin:0 auto;
+  }
+  .navitem{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    font-size:10.5px;
+    color:var(--muted);
+    font-family:'Lora',serif;
+    background:none;
+    border:none;
+    padding:4px 0;
+  }
+  .navitem.active{color:var(--maroon);}
+  .navicon{
+    width:23px;height:23px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:17px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- TAB 1: HOME (registered) or REGISTER (new visitor) -->
+  <section class="screen active" id="screen-register">
+
+    <!-- HOME FEED / ANNOUNCEMENTS -->
+    <div class="content" id="home-view">
+      <div class="cross">✟</div>
+      <div class="brand" style="font-size:18px;">Mass Servers</div>
+      <div class="subbrand">Blessed Tansi Catholic Church<br>New Rumuokwurusi, Port Harcourt</div>
+
+      <div class="home-section-title">This Week's Mass Schedule</div>
+      <div class="schedule-card">
+        <div>
+          <div class="schedule-day">First Mass</div>
+          <div class="schedule-sub">Servers: Group A</div>
+        </div>
+        <div class="schedule-time">6:00 AM</div>
+      </div>
+      <div class="schedule-card">
+        <div>
+          <div class="schedule-day">Second Mass</div>
+          <div class="schedule-sub">Servers: Group B</div>
+        </div>
+        <div class="schedule-time">9:00 AM</div>
+      </div>
+      <div class="schedule-card">
+        <div>
+          <div class="schedule-day">Children's Mass</div>
+          <div class="schedule-sub">Servers: Junior Servers</div>
+        </div>
+        <div class="schedule-time">9:15 AM</div>
+      </div>
+
+      <div class="home-section-title" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Serving This Week</span>
+        <button type="button" class="admin-post-btn" id="editRosterBtn">Edit roster</button>
+      </div>
+
+      <!-- READ-ONLY ROSTER: what everyone sees -->
+      <div id="rosterView">
+        <div class="roster-group">
+          <div class="roster-group-title">Group A — First Mass, 6:00 AM</div>
+          <div class="roster-role"><span>Crucifix bearer</span><span class="roster-name" data-role="a-crucifix">—</span></div>
+          <div class="roster-role"><span>1st MC</span><span class="roster-name" data-role="a-mc1">—</span></div>
+          <div class="roster-role"><span>2nd MC</span><span class="roster-name" data-role="a-mc2">—</span></div>
+          <div class="roster-role"><span>1st Acolyte</span><span class="roster-name" data-role="a-aco1">—</span></div>
+          <div class="roster-role"><span>2nd Acolyte</span><span class="roster-name" data-role="a-aco2">—</span></div>
+        </div>
+
+        <div class="roster-group">
+          <div class="roster-group-title">Group B — Second Mass, 9:00 AM</div>
+          <div class="roster-role"><span>Thurifer</span><span class="roster-name" data-role="b-thurifer">—</span></div>
+          <div class="roster-role"><span>Incense boat bearer</span><span class="roster-name" data-role="b-boat">—</span></div>
+          <div class="roster-role"><span>Crucifix bearer</span><span class="roster-name" data-role="b-crucifix">—</span></div>
+          <div class="roster-role"><span>1st MC</span><span class="roster-name" data-role="b-mc1">—</span></div>
+          <div class="roster-role"><span>2nd MC</span><span class="roster-name" data-role="b-mc2">—</span></div>
+          <div class="roster-role"><span>1st Acolyte</span><span class="roster-name" data-role="b-aco1">—</span></div>
+          <div class="roster-role"><span>2nd Acolyte</span><span class="roster-name" data-role="b-aco2">—</span></div>
+        </div>
+
+        <div class="roster-group">
+          <div class="roster-group-title">Junior Servers — Children's Mass, 9:15 AM</div>
+          <div class="roster-role"><span>Crucifix bearer</span><span class="roster-name" data-role="j-crucifix">—</span></div>
+          <div class="roster-role"><span>1st MC</span><span class="roster-name" data-role="j-mc1">—</span></div>
+          <div class="roster-role"><span>2nd MC</span><span class="roster-name" data-role="j-mc2">—</span></div>
+          <div class="roster-role"><span>1st Acolyte</span><span class="roster-name" data-role="j-aco1">—</span></div>
+          <div class="roster-role"><span>2nd Acolyte</span><span class="roster-name" data-role="j-aco2">—</span></div>
+        </div>
+      </div>
+
+      <!-- EDIT MODE: only visible when "Edit roster" is tapped -->
+      <div id="rosterEdit" style="display:none;">
+        <div class="roster-group">
+          <div class="roster-group-title">Group A — First Mass, 6:00 AM</div>
+          <div class="roster-field"><label>Crucifix bearer</label><input data-role="a-crucifix" placeholder="Name"></div>
+          <div class="roster-field"><label>1st MC</label><input data-role="a-mc1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd MC</label><input data-role="a-mc2" placeholder="Name"></div>
+          <div class="roster-field"><label>1st Acolyte</label><input data-role="a-aco1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd Acolyte</label><input data-role="a-aco2" placeholder="Name"></div>
+        </div>
+
+        <div class="roster-group">
+          <div class="roster-group-title">Group B — Second Mass, 9:00 AM</div>
+          <div class="roster-field"><label>Thurifer</label><input data-role="b-thurifer" placeholder="Name"></div>
+          <div class="roster-field"><label>Incense boat bearer</label><input data-role="b-boat" placeholder="Name"></div>
+          <div class="roster-field"><label>Crucifix bearer</label><input data-role="b-crucifix" placeholder="Name"></div>
+          <div class="roster-field"><label>1st MC</label><input data-role="b-mc1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd MC</label><input data-role="b-mc2" placeholder="Name"></div>
+          <div class="roster-field"><label>1st Acolyte</label><input data-role="b-aco1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd Acolyte</label><input data-role="b-aco2" placeholder="Name"></div>
+        </div>
+
+        <div class="roster-group">
+          <div class="roster-group-title">Junior Servers — Children's Mass, 9:15 AM</div>
+          <div class="roster-field"><label>Crucifix bearer</label><input data-role="j-crucifix" placeholder="Name"></div>
+          <div class="roster-field"><label>1st MC</label><input data-role="j-mc1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd MC</label><input data-role="j-mc2" placeholder="Name"></div>
+          <div class="roster-field"><label>1st Acolyte</label><input data-role="j-aco1" placeholder="Name"></div>
+          <div class="roster-field"><label>2nd Acolyte</label><input data-role="j-aco2" placeholder="Name"></div>
+        </div>
+
+        <button type="button" class="submit-btn" id="saveRosterBtn">Save Roster</button>
+      </div>
+
+      <div class="home-section-title" style="display:flex; align-items:center; justify-content:space-between;">
+        <span>Announcements</span>
+        <button type="button" class="admin-post-btn" id="openComposer">+ Post</button>
+      </div>
+      <div id="announceList">
+        <div class="announce-card">
+          <div class="announce-title">New server intake — forms due</div>
+          <div class="announce-date">Posted 2 days ago</div>
+          <div class="announce-body">All newly registered servers should submit their physical declaration form, signed by a parent or guardian, before the end of the month.</div>
+        </div>
+        <div class="announce-card">
+          <div class="announce-title">Weekly Prayer Meeting</div>
+          <div class="announce-date">Posted 5 days ago</div>
+          <div class="announce-body">The association holds its prayer meeting every Friday, immediately following the evening Mass. All servers are encouraged to attend.</div>
+        </div>
+      </div>
+
+      <!-- admin composer, hidden until "+ Post" is tapped -->
+      <div id="composerBox" style="display:none;">
+        <div class="field"><label>Announcement title</label><input id="composerTitle" placeholder="e.g. Server training moved"></div>
+        <div class="field"><label>Details</label><textarea id="composerBody" placeholder="Write the announcement..."></textarea></div>
+        <button type="button" class="submit-btn" id="composerSubmit">Post Announcement</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI -->
+  <section class="screen" id="screen-ai">
+    <div class="content chat-wrap">
+      <div class="cross">✟</div>
+      <div class="brand" style="font-size:18px;">Ask the Association</div>
+      <div class="subbrand">Questions about serving, schedules,<br>vestments, or formation</div>
+
+      <div class="chat-log" id="chatLog">
+        <div class="bubble bot"><span class="who">Assistant</span>Peace be with you. Ask me anything about the Mass, altar serving, the sacraments, or this parish's schedule.</div>
+      </div>
+
+      <div class="suggest-row">
+        <div class="suggest-chip" data-q="What are the duties of an altar server during Mass?">Server duties</div>
+        <div class="suggest-chip" data-q="What's the difference between a communicant and someone confirmed?">Sacraments explained</div>
+      </div>
+
+      <div class="chat-input-bar">
+        <input type="text" id="chatInput" placeholder="Ask a question…" autocapitalize="sentences">
+        <button type="button" class="send-btn" id="chatSend">➤</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="screen-profile">
+    <div class="content">
+
+      <!-- ACCOUNT MODE: Register / Login, shown before someone has an account -->
+      <div id="account-mode">
+        <div class="cross">✟</div>
+        <div class="brand">Catholic Altar Servers<br>Association</div>
+        <div class="subbrand">Blessed Tansi Catholic Church<br>New Rumuokwurusi, Port Harcourt</div>
+
+        <div class="mode-switch">
+          <button type="button" class="mode-btn active" data-mode="register-mode">New server</button>
+          <button type="button" class="mode-btn" data-mode="login-mode">Already registered</button>
+        </div>
+
+        <!-- ===================== REGISTER MODE ===================== -->
+        <div id="register-mode">
+
+        <form id="register-form" name="server-registration" method="POST" data-netlify="true" data-netlify-honeypot="bot-field">
+        <input type="hidden" name="form-name" value="server-registration">
+        <input type="hidden" name="submittedAt" id="submittedAt">
+        <p style="display:none"><label>Don't fill this out: <input name="bot-field"></label></p>
+
+        <div class="photo-upload">
+          <div class="photo-circle" id="photoCircle">📷</div>
+          <label class="pick" for="photoInput">Upload photograph</label>
+          <input type="file" id="photoInput" name="photo" accept="image/*">
+        </div>
+
+        <div class="field"><label>Full name <span class="req">*</span></label><input name="fullName" required placeholder="e.g. Josephine Obi"></div>
+        <div class="field"><label>Email <span class="req">*</span></label><input type="email" name="email" required placeholder="you@gmail.com"></div>
+        <div class="field"><label>Create a password <span class="req">*</span></label><input type="password" name="password" required placeholder="••••••••"></div>
+
+        <div id="registerError" class="form-error" style="display:none;"></div>
+        <button type="submit" class="submit-btn" id="registerSubmitBtn">Submit Registration</button>
+        <div class="hint">You'll get a confirmation email once this is received, and the association office is notified automatically.</div>
+        </form>
+        </div>
+
+        <!-- ===================== LOGIN MODE ===================== -->
+        <div id="login-mode" style="display:none;">
+
+          <div class="login-box" id="loginStep1">
+            <div class="section-label" style="margin-top:6px;">Log in</div>
+            <div class="field"><label>Email <span class="req">*</span></label><input type="email" id="loginEmail" required placeholder="you@gmail.com"></div>
+            <div class="field"><label>Password <span class="req">*</span></label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
+            <div id="loginError" class="form-error" style="display:none;"></div>
+            <button type="button" class="submit-btn" id="loginSubmit">Log In</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VIEW MODE -->
+      <div id="profile-view" style="display:none;">
+        <div class="profile-head">
+          <div class="avatar" id="profAvatarView">JO</div>
+          <div class="p-name" id="profNameView">Josephine Obi</div>
+          <div class="p-role" id="profRoleView">Senior Server · Joined 2023</div>
+          <div class="p-parish">Blessed Tansi Catholic Church<br>New Rumuokwurusi, Port Harcourt</div>
+          <div class="stat-row">
+            <div class="stat"><b id="profYearsView">3</b><span>Years serving</span></div>
+            <div class="stat"><b>12</b><span>Masses this month</span></div>
+            <div class="stat"><b id="profGroupView">A</b><span>Group</span></div>
+          </div>
+          <button type="button" class="admin-post-btn" id="editProfileBtn" style="margin-top:14px;">Edit profile</button>
+        </div>
+        <ul class="plist">
+          <li>My registration details <span class="arrow">›</span></li>
+          <li>Serving schedule <span class="arrow">›</span></li>
+          <li id="notifToggleRow">Notifications <span class="arrow">›</span></li>
+          <li>Parish announcements <span class="arrow">›</span></li>
+          <li>Log out <span class="arrow">›</span></li>
+        </ul>
+
+        <div class="home-section-title">Recent Sign-ups (Admin)</div>
+        <div id="recentMembers">
+          <div class="subhint">Connecting…</div>
+        </div>
+
+        <!-- notification switches, hidden until tapped -->
+        <div id="notifPanel" style="display:none; margin-top:4px;">
+          <div class="notif-row">
+            <span>Mass schedule reminders</span>
+            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <span>New announcements</span>
+            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <span>Serving-week assignments</span>
+            <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+          </div>
+          <div class="notif-row">
+            <span>AI reply notifications</span>
+            <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- EDIT MODE -->
+      <div id="profile-edit" style="display:none;">
+        <div class="section-label" style="margin-top:14px;">Edit my profile</div>
+
+        <div class="photo-upload">
+          <div class="photo-circle" id="profPhotoCircle">📷</div>
+          <label class="pick" for="profPhotoInput">Change photo</label>
+          <input type="file" id="profPhotoInput" accept="image/*">
+        </div>
+
+        <div class="row2">
+          <div class="field"><label>First name</label><input id="editFirstName" value="Josephine"></div>
+          <div class="field"><label>Surname</label><input id="editSurname" value="Obi"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Year joined</label><input id="editYear" type="number" value="2023" placeholder="e.g. 2023"></div>
+          <div class="field"><label>Group</label><input id="editGroup" value="A" placeholder="e.g. A"></div>
+        </div>
+        <div class="field"><label>Role</label><input id="editRole" value="Senior Server" placeholder="e.g. Senior Server"></div>
+
+        <button type="button" class="submit-btn" id="saveProfileBtn">Save Profile</button>
+        <button type="button" class="admin-post-btn" id="cancelProfileBtn" style="width:100%; margin-top:10px; text-align:center;">Cancel</button>
+      </div>
+
+      <div class="app-credit">Created by King OGBE &amp; Oba Samuel 📌</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- BOTTOM NAV (tap to switch, no scrolling between screens) -->
+<nav class="navbar">
+  <button class="navitem active" data-target="screen-register">
+    <div class="navicon">🏠</div>Announcements
+  </button>
+  <button class="navitem" data-target="screen-ai">
+    <div class="navicon">✦</div>Ask AI
+  </button>
+  <button class="navitem" data-target="screen-profile">
+    <div class="navicon">◔</div>Profile
+  </button>
+</nav>
+
+<script type="module">
+  // ---- Firebase: real registration + login + a live sign-ups feed ----
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, serverTimestamp, collection, query, orderBy, limit, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBAd577yx7uGxGA70MDw0mWxiB0WbZksWs",
+    authDomain: "mass-servers-pj.firebaseapp.com",
+    projectId: "mass-servers-pj",
+    storageBucket: "mass-servers-pj.firebasestorage.app",
+    messagingSenderId: "1018172364411",
+    appId: "1:1018172364411:web:171520fa694934e669b4de"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const auth = getAuth(fbApp);
+  const db = getFirestore(fbApp);
+
+  // Called from the Register form
+  window.msRegister = async function (fullName, email, password) {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "members", cred.user.uid), {
+      fullName: fullName,
+      email: email,
+      createdAt: serverTimestamp()
+    });
+    try { await sendEmailVerification(cred.user); } catch (e) { /* non-fatal */ }
+    return cred.user;
+  };
+
+  // Called from the Login form (step 1: real email+password check)
+  window.msLogin = async function (email, password) {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    return cred.user;
+  };
+
+  // Live feed of the most recent sign-ups, for the admin panel in Profile.
+  // Waits for an authenticated user before querying (our Firestore rules
+  // require sign-in to read), and automatically re-subscribes whenever
+  // the sign-in state changes — e.g. right after Register/Login succeeds.
+  window.msWatchRecentMembers = function (onChange) {
+    let unsubSnap = null;
+    const unsubAuth = onAuthStateChanged(auth, user => {
+      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      if (!user) {
+        onChange([], { code: 'signed-out' });
+        return;
+      }
+      const q = query(collection(db, "members"), orderBy("createdAt", "desc"), limit(15));
+      unsubSnap = onSnapshot(q, snap => {
+        onChange(snap.docs.map(d => d.data()));
+      }, err => {
+        onChange(null, err);
+      });
+    });
+    return () => { unsubAuth(); if (unsubSnap) unsubSnap(); };
+  };
+</script>
+
+<script>
+  // ---- AI chat, scoped to Catholic Church / Mass Server topics ----
+  const SYSTEM_SCOPE = `You are the assistant inside "Mass Servers", an app for the Catholic Altar Servers Association of Blessed Tansi Catholic Church, New Rumuokwurusi, Port Harcourt.
+Only answer questions about: the Catholic Mass and liturgy, altar-serving duties/training/vestments, the sacraments (baptism, communion, confirmation etc.), church societies, general Catholic faith and devotion questions, and this association's schedule/membership process.
+If someone asks about anything unrelated to the Catholic Church or Mass serving, politely say that's outside what you can help with here, and steer them back to church/serving topics.
+Keep answers warm, concise (3-5 sentences unless more detail is genuinely needed), and pastoral in tone. Do not mention that you are Claude or any AI company.`;
+
+  const chatLog = document.getElementById('chatLog');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+
+  function addBubble(text, who) {
+    const b = document.createElement('div');
+    b.className = 'bubble ' + (who === 'user' ? 'user' : 'bot');
+    if (who === 'bot') {
+      b.innerHTML = '<span class="who">Assistant</span>';
+      const span = document.createElement('span');
+      span.textContent = text;
+      b.appendChild(span);
+    } else {
+      b.textContent = text;
+    }
+    chatLog.appendChild(b);
+    chatLog.scrollTop = chatLog.scrollHeight;
+    return b;
+  }
+
+  let aiBusy = false;
+
+  // Tries the real Netlify backend function first (this is what runs on
+  // the live site). If that route doesn't exist — which is the case here
+  // in this Claude preview, since Netlify Functions don't run on
+  // claude.ai — it falls back to Claude's in-preview "sample" capability,
+  // purely so we can keep testing the chat UI while building.
+  async function askBackendThenSample(question, textSpan) {
+    try {
+      const resp = await fetch('/.netlify/functions/ask-ai', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.text) return data.text;
+      }
+    } catch (e) {
+      // network error / route doesn't exist here — fall through to sample
+    }
+
+    const sample = await claude.use('sample');
+    if (!sample) {
+      return "I can't reach the assistant right now. On the live site, make sure the Netlify Function and API key are set up.";
+    }
+    const result = await sample(
+      [{ role: 'user', content: SYSTEM_SCOPE + '\n\nMember question: ' + question }],
+      {
+        cache: false,
+        onText: ({ text }) => {
+          textSpan.textContent = text;
+          chatLog.scrollTop = chatLog.scrollHeight;
+        }
+      }
+    );
+    return result.text;
+  }
+
+  async function askAI(question) {
+    if (aiBusy) return;
+    aiBusy = true;
+    chatSend.disabled = true;
+
+    addBubble(question, 'user');
+    chatInput.value = '';
+    const thinking = addBubble('Thinking…', 'bot');
+    const textSpan = thinking.querySelector('span:last-child');
+
+    try {
+      // safeguard: never let the UI stay stuck/disabled if a reply hangs
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject({ code: 'timeout' }), 25000)
+      );
+
+      const text = await Promise.race([askBackendThenSample(question, textSpan), timeout]);
+      textSpan.textContent = text;
+    } catch (err) {
+      if (err && err.code === 'rate_limited') {
+        textSpan.textContent = "Getting a lot of questions right now — please try again in a moment.";
+      } else if (err && err.code === 'timeout') {
+        textSpan.textContent = "That's taking too long — please try asking again.";
+      } else {
+        textSpan.textContent = "Sorry, I couldn't get an answer just now. Please try again.";
+      }
+    } finally {
+      aiBusy = false;
+      chatSend.disabled = false;
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+  }
+
+  chatSend.addEventListener('click', () => {
+    const q = chatInput.value.trim();
+    if (q) askAI(q);
+  });
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const q = chatInput.value.trim();
+      if (q) askAI(q);
+    }
+  });
+  document.querySelectorAll('.suggest-chip').forEach(chip => {
+    chip.addEventListener('click', () => askAI(chip.dataset.q));
+  });
+
+  // ---- admin: live feed of recent sign-ups (no email needed) ----
+  const recentMembersBox = document.getElementById('recentMembers');
+  (function waitForFirebaseThenWatch() {
+    if (!window.msWatchRecentMembers) {
+      setTimeout(waitForFirebaseThenWatch, 400);
+      return;
+    }
+    window.msWatchRecentMembers((members, err) => {
+      if (err && err.code === 'signed-out') {
+        recentMembersBox.innerHTML = '<div class="subhint">Log in to see recent sign-ups.</div>';
+        return;
+      }
+      if (err) {
+        recentMembersBox.innerHTML = '<div class="subhint">Can\'t load sign-ups right now — check Firestore rules are published.</div>';
+        return;
+      }
+      if (!members || members.length === 0) {
+        recentMembersBox.innerHTML = '<div class="subhint">No one has registered yet.</div>';
+        return;
+      }
+      recentMembersBox.innerHTML = members.map(m => {
+        const when = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleString() : 'just now';
+        return '<div class="roster-role"><span>' + (m.fullName || 'Member') + '<br><span style="font-size:10px;color:var(--muted);">' + (m.email || '') + ' · ' + when + '</span></span></div>';
+      }).join('');
+    });
+  })();
+
+  // ---- profile: view/edit toggle + save ----
+  const profileView = document.getElementById('profile-view');
+  const profileEdit = document.getElementById('profile-edit');
+  const editProfileBtn = document.getElementById('editProfileBtn');
+  const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+  editProfileBtn.addEventListener('click', () => {
+    profileView.style.display = 'none';
+    profileEdit.style.display = 'block';
+  });
+  cancelProfileBtn.addEventListener('click', () => {
+    profileEdit.style.display = 'none';
+    profileView.style.display = 'block';
+  });
+  saveProfileBtn.addEventListener('click', () => {
+    const first = document.getElementById('editFirstName').value.trim() || 'Member';
+    const sur = document.getElementById('editSurname').value.trim() || '';
+    const year = document.getElementById('editYear').value.trim();
+    const group = document.getElementById('editGroup').value.trim() || '—';
+    const role = document.getElementById('editRole').value.trim() || 'Server';
+
+    document.getElementById('profNameView').textContent = (first + ' ' + sur).trim();
+    document.getElementById('profRoleView').textContent = role + (year ? ' · Joined ' + year : '');
+    document.getElementById('profGroupView').textContent = group;
+    if (year) {
+      const years = Math.max(0, new Date().getFullYear() - parseInt(year, 10));
+      document.getElementById('profYearsView').textContent = years;
+    }
+    const initials = ((first[0] || '') + (sur[0] || '')).toUpperCase();
+    const avatarView = document.getElementById('profAvatarView');
+    if (!avatarView.querySelector('img')) avatarView.textContent = initials || 'JO';
+
+    profileEdit.style.display = 'none';
+    profileView.style.display = 'block';
+  });
+
+  // profile photo preview, mirrored onto the view avatar too
+  const profPhotoInput = document.getElementById('profPhotoInput');
+  const profPhotoCircle = document.getElementById('profPhotoCircle');
+  profPhotoInput.addEventListener('change', () => {
+    const file = profPhotoInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      profPhotoCircle.innerHTML = '<img src="' + e.target.result + '" alt="Photo">';
+      document.getElementById('profAvatarView').innerHTML = '<img src="' + e.target.result + '" alt="Photo">';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // notifications panel
+  const notifToggleRow = document.getElementById('notifToggleRow');
+  const notifPanel = document.getElementById('notifPanel');
+  notifToggleRow.addEventListener('click', () => {
+    notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none';
+  });
+
+  // ---- account: register/login mode switch + demo "sign in" flow ----
+  const accountMode = document.getElementById('account-mode');
+  const profileViewWrap = document.getElementById('profile-view');
+  const acctModeBtns = document.querySelectorAll('#account-mode .mode-switch .mode-btn');
+  acctModeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      acctModeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('register-mode').style.display = btn.dataset.mode === 'register-mode' ? 'block' : 'none';
+      document.getElementById('login-mode').style.display = btn.dataset.mode === 'login-mode' ? 'block' : 'none';
+    });
+  });
+
+  // friendly text for common Firebase error codes
+  function friendlyAuthError(err) {
+    const code = err && err.code ? err.code : '';
+    if (code.includes('email-already-in-use')) return 'That email is already registered — try logging in instead.';
+    if (code.includes('weak-password')) return 'Password should be at least 6 characters.';
+    if (code.includes('invalid-email')) return 'That email address doesn\'t look right.';
+    if (code.includes('user-not-found') || code.includes('invalid-credential') || code.includes('wrong-password')) return 'Email or password is incorrect.';
+    if (code.includes('network-request-failed')) return 'Network issue — please check your connection and try again.';
+    return 'Something went wrong. Please try again.';
+  }
+
+  // ---- register: real Firebase account + Firestore record ----
+  const regForm2 = document.getElementById('register-form');
+  const registerError = document.getElementById('registerError');
+  const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+
+  regForm2.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    registerError.style.display = 'none';
+    document.getElementById('submittedAt').value = new Date().toISOString();
+
+    const fullName = regForm2.querySelector('[name="fullName"]').value.trim();
+    const email = regForm2.querySelector('[name="email"]').value.trim();
+    const password = regForm2.querySelector('[name="password"]').value;
+
+    if (!fullName || !email || !password) return;
+
+    registerSubmitBtn.disabled = true;
+    registerSubmitBtn.textContent = 'Submitting…';
+    try {
+      if (!window.msRegister) throw { code: 'not-ready' };
+      await window.msRegister(fullName, email, password);
+      accountMode.style.display = 'none';
+      profileViewWrap.style.display = 'block';
+      document.getElementById('profNameView').textContent = fullName;
+      const initials = fullName.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const avatarEl = document.getElementById('profAvatarView');
+      if (!avatarEl.querySelector('img')) avatarEl.textContent = initials || 'MS';
+    } catch (err) {
+      registerError.textContent = (err.code === 'not-ready')
+        ? 'Still connecting — please wait a moment and try again.'
+        : friendlyAuthError(err);
+      registerError.style.display = 'block';
+    } finally {
+      registerSubmitBtn.disabled = false;
+      registerSubmitBtn.textContent = 'Submit Registration';
+    }
+  });
+
+  // ---- login: real Firebase email + password check ----
+  const loginSubmitBtn = document.getElementById('loginSubmit');
+  const loginError = document.getElementById('loginError');
+
+  loginSubmitBtn.addEventListener('click', async () => {
+    loginError.style.display = 'none';
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPassword').value;
+    if (!email || !pw) return;
+
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.textContent = 'Logging in…';
+    try {
+      if (!window.msLogin) throw { code: 'not-ready' };
+      await window.msLogin(email, pw);
+      accountMode.style.display = 'none';
+      profileViewWrap.style.display = 'block';
+    } catch (err) {
+      loginError.textContent = (err.code === 'not-ready')
+        ? 'Still connecting — please wait a moment and try again.'
+        : friendlyAuthError(err);
+      loginError.style.display = 'block';
+    } finally {
+      loginSubmitBtn.disabled = false;
+      loginSubmitBtn.textContent = 'Log In';
+    }
+  });
+
+  // ---- admin: edit the weekly serving roster ----
+  const rosterView = document.getElementById('rosterView');
+  const rosterEdit = document.getElementById('rosterEdit');
+  const editRosterBtn = document.getElementById('editRosterBtn');
+  const saveRosterBtn = document.getElementById('saveRosterBtn');
+
+  editRosterBtn.addEventListener('click', () => {
+    const opening = rosterEdit.style.display === 'none';
+    if (opening) {
+      // pre-fill the edit inputs with whatever is currently shown
+      rosterEdit.querySelectorAll('input[data-role]').forEach(input => {
+        const current = rosterView.querySelector('[data-role="' + input.dataset.role + '"]');
+        input.value = (current.textContent === '—') ? '' : current.textContent;
+      });
+    }
+    rosterView.style.display = opening ? 'none' : 'block';
+    rosterEdit.style.display = opening ? 'block' : 'none';
+    editRosterBtn.textContent = opening ? 'Cancel' : 'Edit roster';
+  });
+
+  saveRosterBtn.addEventListener('click', () => {
+    rosterEdit.querySelectorAll('input[data-role]').forEach(input => {
+      const target = rosterView.querySelector('[data-role="' + input.dataset.role + '"]');
+      const name = input.value.trim();
+      target.textContent = name || '—';
+    });
+    rosterView.style.display = 'block';
+    rosterEdit.style.display = 'none';
+    editRosterBtn.textContent = 'Edit roster';
+  });
+
+  // admin: post an announcement (demo only — see note below)
+  const openComposer = document.getElementById('openComposer');
+  const composerBox = document.getElementById('composerBox');
+  const composerSubmit = document.getElementById('composerSubmit');
+  const announceList = document.getElementById('announceList');
+  openComposer.addEventListener('click', () => {
+    composerBox.style.display = composerBox.style.display === 'none' ? 'block' : 'none';
+  });
+  composerSubmit.addEventListener('click', () => {
+    const title = document.getElementById('composerTitle').value.trim();
+    const body = document.getElementById('composerBody').value.trim();
+    if (!title || !body) return;
+    const card = document.createElement('div');
+    card.className = 'announce-card';
+    card.innerHTML = '<div class="announce-title"></div><div class="announce-date">Posted just now</div><div class="announce-body"></div>';
+    card.querySelector('.announce-title').textContent = title;
+    card.querySelector('.announce-body').textContent = body;
+    announceList.prepend(card);
+    document.getElementById('composerTitle').value = '';
+    document.getElementById('composerBody').value = '';
+    composerBox.style.display = 'none';
+  });
+
+  // photo preview
+  const photoInput = document.getElementById('photoInput');
+  const photoCircle = document.getElementById('photoCircle');
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      photoCircle.innerHTML = '<img src="' + e.target.result + '" alt="Photo">';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const navItems = document.querySelectorAll('.navitem');
+  const screens = document.querySelectorAll('.screen');
+  navItems.forEach(btn => {
+    btn.addEventListener('click', () => {
+      navItems.forEach(b => b.classList.remove('active'));
+      screens.forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
