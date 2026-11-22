@@ -435,6 +435,23 @@
   }
   .announce-date{font-size:10px; color:var(--muted); margin-bottom:6px;}
   .announce-body{font-size:12px; color:#4a3f36; line-height:1.55;}
+  .announce-admin-row{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+    padding-top:9px;
+    border-top:1px solid var(--line);
+  }
+  .announce-edit-btn, .announce-delete-btn{
+    font-family:'Lora',serif;
+    font-size:11px;
+    font-weight:600;
+    border-radius:14px;
+    padding:5px 11px;
+    border:1px solid;
+  }
+  .announce-edit-btn{color:var(--maroon); border-color:var(--gold); background:#fff;}
+  .announce-delete-btn{color:#8a2130; border-color:#c98e94; background:#fff;}
 
   /* ---- serving roster ---- */
   .roster-group{
@@ -691,22 +708,14 @@
         <button type="button" class="admin-post-btn" id="openComposer">+ Post</button>
       </div>
       <div id="announceList">
-        <div class="announce-card">
-          <div class="announce-title">New server intake — forms due</div>
-          <div class="announce-date">Posted 2 days ago</div>
-          <div class="announce-body">All newly registered servers should submit their physical declaration form, signed by a parent or guardian, before the end of the month.</div>
-        </div>
-        <div class="announce-card">
-          <div class="announce-title">Weekly Prayer Meeting</div>
-          <div class="announce-date">Posted 5 days ago</div>
-          <div class="announce-body">The association holds its prayer meeting every Friday, immediately following the evening Mass. All servers are encouraged to attend.</div>
-        </div>
+        <div class="subhint">Loading announcements…</div>
       </div>
 
       <!-- admin composer, hidden until "+ Post" is tapped -->
       <div id="composerBox" style="display:none;">
         <div class="field"><label>Announcement title</label><input id="composerTitle" placeholder="e.g. Server training moved"></div>
         <div class="field"><label>Details</label><textarea id="composerBody" placeholder="Write the announcement..."></textarea></div>
+        <div id="composerError" class="form-error" style="display:none;"></div>
         <button type="button" class="submit-btn" id="composerSubmit">Post Announcement</button>
       </div>
     </div>
@@ -791,14 +800,13 @@
       <!-- VIEW MODE -->
       <div id="profile-view" style="display:none;">
         <div class="profile-head">
-          <div class="avatar" id="profAvatarView">JO</div>
-          <div class="p-name" id="profNameView">Josephine Obi</div>
-          <div class="p-role" id="profRoleView">Senior Server · Joined 2023</div>
+          <div class="avatar" id="profAvatarView">MS</div>
+          <div class="p-name" id="profNameView">Member</div>
+          <div class="p-role" id="profRoleView">Member</div>
           <div class="p-parish">Blessed Tansi Catholic Church<br>New Rumuokwurusi, Port Harcourt</div>
-          <div class="stat-row">
-            <div class="stat"><b id="profYearsView">3</b><span>Years serving</span></div>
-            <div class="stat"><b>12</b><span>Masses this month</span></div>
-            <div class="stat"><b id="profGroupView">A</b><span>Group</span></div>
+          <div class="stat-row" id="profStatRow" style="display:none;">
+            <div class="stat"><b id="profYearsView">0</b><span>Years serving</span></div>
+            <div class="stat"><b id="profGroupView">—</b><span>Group</span></div>
           </div>
           <button type="button" class="admin-post-btn" id="editProfileBtn" style="margin-top:14px;">Edit profile</button>
         </div>
@@ -807,12 +815,14 @@
           <li>Serving schedule <span class="arrow">›</span></li>
           <li id="notifToggleRow">Notifications <span class="arrow">›</span></li>
           <li>Parish announcements <span class="arrow">›</span></li>
-          <li>Log out <span class="arrow">›</span></li>
+          <li id="logoutBtn" style="cursor:pointer;">Log out <span class="arrow">›</span></li>
         </ul>
 
-        <div class="home-section-title">Recent Sign-ups (Admin)</div>
-        <div id="recentMembers">
-          <div class="subhint">Connecting…</div>
+        <div id="adminSignupsSection" style="display:none;">
+          <div class="home-section-title">Recent Sign-ups (Admin)</div>
+          <div id="recentMembers">
+            <div class="subhint">Connecting…</div>
+          </div>
         </div>
 
         <!-- notification switches, hidden until tapped -->
@@ -847,14 +857,14 @@
         </div>
 
         <div class="row2">
-          <div class="field"><label>First name</label><input id="editFirstName" value="Josephine"></div>
-          <div class="field"><label>Surname</label><input id="editSurname" value="Obi"></div>
+          <div class="field"><label>First name</label><input id="editFirstName"></div>
+          <div class="field"><label>Surname</label><input id="editSurname"></div>
         </div>
         <div class="row2">
-          <div class="field"><label>Year joined</label><input id="editYear" type="number" value="2023" placeholder="e.g. 2023"></div>
-          <div class="field"><label>Group</label><input id="editGroup" value="A" placeholder="e.g. A"></div>
+          <div class="field"><label>Year joined</label><input id="editYear" type="number" placeholder="e.g. 2023"></div>
+          <div class="field"><label>Group</label><input id="editGroup" placeholder="e.g. A"></div>
         </div>
-        <div class="field"><label>Role</label><input id="editRole" value="Senior Server" placeholder="e.g. Senior Server"></div>
+        <div class="field"><label>Role</label><input id="editRole" placeholder="e.g. Senior Server"></div>
 
         <button type="button" class="submit-btn" id="saveProfileBtn">Save Profile</button>
         <button type="button" class="admin-post-btn" id="cancelProfileBtn" style="width:100%; margin-top:10px; text-align:center;">Cancel</button>
@@ -883,10 +893,10 @@
   // ---- Firebase: real registration + login + a live sign-ups feed ----
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged, signOut
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
   import {
-    getFirestore, doc, setDoc, serverTimestamp, collection, query, orderBy, limit, onSnapshot
+    getFirestore, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, collection, query, orderBy, limit, onSnapshot
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -918,6 +928,98 @@
   window.msLogin = async function (email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     return cred.user;
+  };
+
+  window.msLogout = async function () {
+    await signOut(auth);
+  };
+
+  // Reports whether the signed-in user is an admin, and re-checks
+  // automatically whenever sign-in state changes.
+  window.msOnAuthChange = function (onChange) {
+    return onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        onChange({ signedIn: false, isAdmin: false });
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "members", user.uid));
+        const isAdmin = snap.exists() && snap.data().isAdmin === true;
+        const fullName = snap.exists() ? (snap.data().fullName || '') : '';
+        onChange({ signedIn: true, isAdmin, uid: user.uid, fullName, email: user.email || '' });
+      } catch (e) {
+        onChange({ signedIn: true, isAdmin: false, uid: user.uid });
+      }
+    });
+  };
+
+  // Post a new announcement — Firestore rules enforce that only an admin
+  // account can actually write here, even if someone tampers with the app.
+  window.msPostAnnouncement = async function (title, body) {
+    await addDoc(collection(db, "announcements"), {
+      title: title,
+      body: body,
+      postedAt: serverTimestamp()
+    });
+  };
+
+  // Shared helper: don't query a collection that requires sign-in until
+  // Firebase has actually confirmed we're signed in. Without this, a
+  // listener attached before auth finishes restoring fails permanently
+  // (Firestore doesn't auto-retry a denied listener), which is what was
+  // making announcements/roster look stuck or "slow" to load.
+  function watchWhenSignedIn(buildQueryOrRef, onChange) {
+    let unsubSnap = null;
+    const unsubAuth = onAuthStateChanged(auth, user => {
+      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      if (!user) {
+        onChange(null, { code: 'signed-out' });
+        return;
+      }
+      unsubSnap = onSnapshot(buildQueryOrRef(), snapOrQuerySnap => {
+        onChange(snapOrQuerySnap);
+      }, err => {
+        onChange(null, err);
+      });
+    });
+    return () => { unsubAuth(); if (unsubSnap) unsubSnap(); };
+  }
+
+  // Anyone with the link can READ announcements (live, no login needed).
+  // Only an admin's write is ever accepted by the database rules.
+  window.msWatchAnnouncements = function (onChange) {
+    const q = query(collection(db, "announcements"), orderBy("postedAt", "desc"), limit(20));
+    return onSnapshot(q, snap => {
+      onChange(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => {
+      onChange(null, err);
+    });
+  };
+
+  window.msUpdateAnnouncement = async function (id, title, body) {
+    await updateDoc(doc(db, "announcements", id), {
+      title: title,
+      body: body,
+      editedAt: serverTimestamp()
+    });
+  };
+
+  window.msDeleteAnnouncement = async function (id) {
+    await deleteDoc(doc(db, "announcements", id));
+  };
+
+  // ---- weekly serving roster: one shared document everyone reads live,
+  // only an admin can write to it ----
+  window.msWatchRoster = function (onChange) {
+    return onSnapshot(doc(db, "roster", "current"), snap => {
+      onChange(snap.exists() ? snap.data() : {});
+    }, err => {
+      onChange(null, err);
+    });
+  };
+
+  window.msSaveRoster = async function (rosterData) {
+    await setDoc(doc(db, "roster", "current"), rosterData, { merge: true });
   };
 
   // Live feed of the most recent sign-ups, for the admin panel in Profile.
@@ -1057,6 +1159,68 @@ Keep answers warm, concise (3-5 sentences unless more detail is genuinely needed
     chip.addEventListener('click', () => askAI(chip.dataset.q));
   });
 
+  // ---- admin gating: hide admin-only controls from everyone else ----
+  const editRosterBtnEl = document.getElementById('editRosterBtn');
+  const openComposerEl = document.getElementById('openComposer');
+  const adminSignupsSection = document.getElementById('adminSignupsSection');
+  let currentIsAdmin = false; // read elsewhere (announcement edit/delete buttons)
+
+  function setAdminUI(isAdmin) {
+    currentIsAdmin = isAdmin;
+    editRosterBtnEl.style.display = isAdmin ? 'inline-block' : 'none';
+    openComposerEl.style.display = isAdmin ? 'inline-block' : 'none';
+    adminSignupsSection.style.display = isAdmin ? 'block' : 'none';
+    if (window.msRerenderAnnouncements) window.msRerenderAnnouncements();
+  }
+  setAdminUI(false); // hidden until we confirm admin status
+
+  (function wireLogout() {
+    const btn = document.getElementById('logoutBtn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      if (window.msLogout) {
+        try { await window.msLogout(); } catch (e) { /* ignore */ }
+      }
+    });
+  })();
+
+  // ---- stay logged in: if Firebase already has a session, skip straight
+  // to the Profile view instead of showing Register/Login again ----
+  function showSignedInState(signedIn) {
+    const acctMode = document.getElementById('account-mode');
+    const profView = document.getElementById('profile-view');
+    if (signedIn) {
+      acctMode.style.display = 'none';
+      profView.style.display = 'block';
+    } else {
+      acctMode.style.display = 'block';
+      profView.style.display = 'none';
+    }
+  }
+
+  (function waitForAuthGateThenWatch() {
+    if (!window.msOnAuthChange) {
+      setTimeout(waitForAuthGateThenWatch, 400);
+      return;
+    }
+    window.msOnAuthChange((state) => {
+      setAdminUI(!!state.isAdmin);
+      showSignedInState(!!state.signedIn);
+
+      // fill the Profile tab from the member's real account
+      if (state.signedIn) {
+        document.getElementById('profRoleView').textContent = state.isAdmin ? 'Administrator' : 'Member';
+        if (state.fullName) {
+          document.getElementById('profNameView').textContent = state.fullName;
+          const avatarEl = document.getElementById('profAvatarView');
+          if (!avatarEl.querySelector('img')) {
+            avatarEl.textContent = state.fullName.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'MS';
+          }
+        }
+      }
+    });
+  })();
+
   // ---- admin: live feed of recent sign-ups (no email needed) ----
   const recentMembersBox = document.getElementById('recentMembers');
   (function waitForFirebaseThenWatch() {
@@ -1109,13 +1273,14 @@ Keep answers warm, concise (3-5 sentences unless more detail is genuinely needed
     document.getElementById('profNameView').textContent = (first + ' ' + sur).trim();
     document.getElementById('profRoleView').textContent = role + (year ? ' · Joined ' + year : '');
     document.getElementById('profGroupView').textContent = group;
+    document.getElementById('profStatRow').style.display = 'flex';
     if (year) {
       const years = Math.max(0, new Date().getFullYear() - parseInt(year, 10));
       document.getElementById('profYearsView').textContent = years;
     }
     const initials = ((first[0] || '') + (sur[0] || '')).toUpperCase();
     const avatarView = document.getElementById('profAvatarView');
-    if (!avatarView.querySelector('img')) avatarView.textContent = initials || 'JO';
+    if (!avatarView.querySelector('img')) avatarView.textContent = initials || 'MS';
 
     profileEdit.style.display = 'none';
     profileView.style.display = 'block';
@@ -1232,19 +1397,39 @@ Keep answers warm, concise (3-5 sentences unless more detail is genuinely needed
     }
   });
 
-  // ---- admin: edit the weekly serving roster ----
+  // ---- weekly serving roster: lives in Firestore, everyone sees live
+  // updates, only an admin's save is accepted ----
   const rosterView = document.getElementById('rosterView');
   const rosterEdit = document.getElementById('rosterEdit');
   const editRosterBtn = document.getElementById('editRosterBtn');
   const saveRosterBtn = document.getElementById('saveRosterBtn');
+  let lastRosterData = {};
+
+  function applyRosterToView(data) {
+    lastRosterData = data || {};
+    rosterView.querySelectorAll('[data-role]').forEach(span => {
+      const name = lastRosterData[span.dataset.role];
+      span.textContent = name && name.trim() ? name : '—';
+    });
+  }
+
+  (function waitForRosterThenWatch() {
+    if (!window.msWatchRoster) {
+      setTimeout(waitForRosterThenWatch, 400);
+      return;
+    }
+    window.msWatchRoster((data, err) => {
+      if (err) return; // not signed in yet — view just keeps showing "—"
+      applyRosterToView(data);
+    });
+  })();
 
   editRosterBtn.addEventListener('click', () => {
     const opening = rosterEdit.style.display === 'none';
     if (opening) {
-      // pre-fill the edit inputs with whatever is currently shown
+      // pre-fill the edit inputs with the live roster data
       rosterEdit.querySelectorAll('input[data-role]').forEach(input => {
-        const current = rosterView.querySelector('[data-role="' + input.dataset.role + '"]');
-        input.value = (current.textContent === '—') ? '' : current.textContent;
+        input.value = lastRosterData[input.dataset.role] || '';
       });
     }
     rosterView.style.display = opening ? 'none' : 'block';
@@ -1252,39 +1437,155 @@ Keep answers warm, concise (3-5 sentences unless more detail is genuinely needed
     editRosterBtn.textContent = opening ? 'Cancel' : 'Edit roster';
   });
 
-  saveRosterBtn.addEventListener('click', () => {
+  saveRosterBtn.addEventListener('click', async () => {
+    const updated = {};
     rosterEdit.querySelectorAll('input[data-role]').forEach(input => {
-      const target = rosterView.querySelector('[data-role="' + input.dataset.role + '"]');
-      const name = input.value.trim();
-      target.textContent = name || '—';
+      updated[input.dataset.role] = input.value.trim();
     });
-    rosterView.style.display = 'block';
-    rosterEdit.style.display = 'none';
-    editRosterBtn.textContent = 'Edit roster';
+
+    saveRosterBtn.disabled = true;
+    saveRosterBtn.textContent = 'Saving…';
+    try {
+      if (!window.msSaveRoster) throw new Error('not-ready');
+      await window.msSaveRoster(updated);
+      // msWatchRoster's live listener will refresh rosterView automatically
+      rosterView.style.display = 'block';
+      rosterEdit.style.display = 'none';
+      editRosterBtn.textContent = 'Edit roster';
+    } catch (err) {
+      window.alert("Couldn't save — only an admin account can edit the roster.");
+    } finally {
+      saveRosterBtn.disabled = false;
+      saveRosterBtn.textContent = 'Save Roster';
+    }
   });
 
-  // admin: post an announcement (demo only — see note below)
+  // admin: post / edit / delete announcements
   const openComposer = document.getElementById('openComposer');
   const composerBox = document.getElementById('composerBox');
   const composerSubmit = document.getElementById('composerSubmit');
+  const composerError = document.getElementById('composerError');
   const announceList = document.getElementById('announceList');
-  openComposer.addEventListener('click', () => {
-    composerBox.style.display = composerBox.style.display === 'none' ? 'block' : 'none';
-  });
-  composerSubmit.addEventListener('click', () => {
-    const title = document.getElementById('composerTitle').value.trim();
-    const body = document.getElementById('composerBody').value.trim();
-    if (!title || !body) return;
-    const card = document.createElement('div');
-    card.className = 'announce-card';
-    card.innerHTML = '<div class="announce-title"></div><div class="announce-date">Posted just now</div><div class="announce-body"></div>';
-    card.querySelector('.announce-title').textContent = title;
-    card.querySelector('.announce-body').textContent = body;
-    announceList.prepend(card);
-    document.getElementById('composerTitle').value = '';
-    document.getElementById('composerBody').value = '';
+  const composerTitleEl = document.getElementById('composerTitle');
+  const composerBodyEl = document.getElementById('composerBody');
+  let editingAnnouncementId = null; // null = posting new, else editing this id
+  let lastAnnouncementItems = [];
+
+  function resetComposer() {
+    editingAnnouncementId = null;
+    composerTitleEl.value = '';
+    composerBodyEl.value = '';
+    composerSubmit.textContent = 'Post Announcement';
     composerBox.style.display = 'none';
+    composerError.style.display = 'none';
+  }
+
+  openComposer.addEventListener('click', () => {
+    if (composerBox.style.display === 'none') {
+      editingAnnouncementId = null;
+      composerTitleEl.value = '';
+      composerBodyEl.value = '';
+      composerSubmit.textContent = 'Post Announcement';
+      composerBox.style.display = 'block';
+    } else {
+      resetComposer();
+    }
   });
+
+  composerSubmit.addEventListener('click', async () => {
+    composerError.style.display = 'none';
+    const title = composerTitleEl.value.trim();
+    const body = composerBodyEl.value.trim();
+    if (!title || !body) return;
+
+    composerSubmit.disabled = true;
+    composerSubmit.textContent = editingAnnouncementId ? 'Saving…' : 'Posting…';
+    try {
+      if (editingAnnouncementId) {
+        if (!window.msUpdateAnnouncement) throw new Error('not-ready');
+        await window.msUpdateAnnouncement(editingAnnouncementId, title, body);
+      } else {
+        if (!window.msPostAnnouncement) throw new Error('not-ready');
+        await window.msPostAnnouncement(title, body);
+      }
+      resetComposer();
+    } catch (err) {
+      composerError.textContent = editingAnnouncementId
+        ? "Couldn't save changes — only an admin account can edit announcements."
+        : "Couldn't post — only an admin account can post announcements.";
+      composerError.style.display = 'block';
+    } finally {
+      composerSubmit.disabled = false;
+      composerSubmit.textContent = editingAnnouncementId ? 'Save Changes' : 'Post Announcement';
+    }
+  });
+
+  function startEditingAnnouncement(id) {
+    const item = lastAnnouncementItems.find(a => a.id === id);
+    if (!item) return;
+    editingAnnouncementId = id;
+    composerTitleEl.value = item.title || '';
+    composerBodyEl.value = item.body || '';
+    composerSubmit.textContent = 'Save Changes';
+    composerBox.style.display = 'block';
+    composerBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function deleteAnnouncementById(id) {
+    if (!window.confirm('Delete this announcement? This cannot be undone.')) return;
+    try {
+      if (!window.msDeleteAnnouncement) throw new Error('not-ready');
+      await window.msDeleteAnnouncement(id);
+    } catch (err) {
+      window.alert("Couldn't delete — only an admin account can delete announcements.");
+    }
+  }
+
+  // live announcement feed — everyone sees it; Edit/Delete only render for admins
+  function renderAnnouncements(items) {
+    lastAnnouncementItems = items || [];
+    if (!items || items.length === 0) {
+      announceList.innerHTML = '<div class="subhint">No announcements yet.</div>';
+      return;
+    }
+    announceList.innerHTML = items.map(a => {
+      const when = a.postedAt && a.postedAt.toDate ? a.postedAt.toDate().toLocaleDateString() : 'just now';
+      const safeTitle = (a.title || '').replace(/</g, '&lt;');
+      const safeBody = (a.body || '').replace(/</g, '&lt;');
+      const adminControls = currentIsAdmin
+        ? '<div class="announce-admin-row">' +
+            '<button type="button" class="announce-edit-btn" data-id="' + a.id + '">Edit</button>' +
+            '<button type="button" class="announce-delete-btn" data-id="' + a.id + '">Delete</button>' +
+          '</div>'
+        : '';
+      return '<div class="announce-card"><div class="announce-title">' + safeTitle +
+        '</div><div class="announce-date">Posted ' + when +
+        '</div><div class="announce-body">' + safeBody + '</div>' + adminControls + '</div>';
+    }).join('');
+
+    announceList.querySelectorAll('.announce-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => startEditingAnnouncement(btn.dataset.id));
+    });
+    announceList.querySelectorAll('.announce-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteAnnouncementById(btn.dataset.id));
+    });
+  }
+
+  window.msRerenderAnnouncements = () => renderAnnouncements(lastAnnouncementItems);
+
+  (function waitForAnnouncementsThenWatch() {
+    if (!window.msWatchAnnouncements) {
+      setTimeout(waitForAnnouncementsThenWatch, 400);
+      return;
+    }
+    window.msWatchAnnouncements((items, err) => {
+      if (err) {
+        announceList.innerHTML = '<div class="subhint">Can\'t load announcements right now. Please check your connection and refresh.</div>';
+        return;
+      }
+      renderAnnouncements(items);
+    });
+  })();
 
   // photo preview
   const photoInput = document.getElementById('photoInput');
